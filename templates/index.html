@@ -1,0 +1,42 @@
+{% extends 'base.html' %}
+
+
+{% block title %}
+Главная страница
+{% endblock %}
+
+
+
+
+
+{% block body %}
+
+
+
+
+
+
+
+<div class="container">
+    <form method="post">
+    <h1 class="h3 mb-3 fw-normal">Please sign in</h1>
+
+    <div class="form-floating">
+      <input name="name" class="form-control" id="name" placeholder="name@example.com">
+      <label for="name">Email address</label>
+    </div>
+    <div class="form-floating">
+      <input name="surname" class="form-control" id="surname" placeholder="Password">
+      <label for="surname">Password</label>
+    </div>
+
+
+    <input class="btn btn-success" type="submit">Sign in</input>
+  </form>
+</div>
+
+
+
+
+
+{% endblock %}
