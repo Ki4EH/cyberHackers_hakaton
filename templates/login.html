@@ -13,21 +13,21 @@
     <h1>Авторизация</h1>
     <form method="post">
       <div class="txt_field">
-        <input type="text" required>
+        <input type="text" name="email" required>
         <span></span>
         <label>E-mail</label>
       </div>
       <div class="txt_field">
-        <input type="password" required>
+        <input type="password" name="password" required>
         <span></span>
         <label>Пароль</label>
       </div>
       <div class="pass">
-        Забыли пароль?
+        <a href="/templates/reset_password.html">Забыли пароль?</a>
       </div>
       <input type="submit" value="Войти">
       <div class="singup_link">
-        Нет аккаунта? <a href="#">Зарегестрироваться</a>
+        Нет аккаунта? <a href="/templates/regist.html">Зарегестрироваться</a>
       </div>
     </form>
   </div>

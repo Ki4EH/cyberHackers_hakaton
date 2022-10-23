@@ -1,0 +1,40 @@
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Регистрация</title>
+    <link rel="stylesheet" href="/static/css/main.css">
+</head>
+<body>
+    <div class="center">
+        <h1>Регистрация</h1>
+        <form method="post">
+            <div class="txt_field">
+                <input type="text" name="firs_name" required>
+                <span></span>
+                <label>Имя</label>
+            </div>
+            <div class="txt_field">
+                <input type="text" name="second_name" required>
+                <span></span>
+                <label>Фамилия</label>
+            </div>
+            <div class="txt_field">
+                <input type="text" name="email" required>
+                <span></span>
+                <label>E-mail</label>
+            </div>
+            <div class="txt_field">
+                <input type="password" name="password" required>
+                <span></span>
+                <label>Пароль</label>
+            </div>
+            <input type="submit" value="Зарегестрироваться">
+            <div class="singup_link">
+                Есть аккаунт? <a href="/templates/login.html">Войти</a>
+            </div>
+        </form>
+    </div>
+</body>
+</html>

@@ -51,7 +51,7 @@ def index():
             print(ex)
             return "DB ERROR"
     else:
-        return render_template("index.html")
+        return render_template("login.html")
 
 
 @app.route('/user/<string:name>/<int:id_>')

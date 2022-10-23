@@ -18,7 +18,16 @@ body {
 .center h1 {
     text-align: center;
     padding: 0 0 20px 0;
-    color: black;
+    color: #252525;
+    border-bottom: 1px solid silver;
+}
+.center h2 {
+    text-align: center;
+    padding-right: 5px;
+    padding-top: 10px;
+    padding-bottom: 20px;
+    color: #252525;
+    font-size: 14px;
     border-bottom: 1px solid silver;
 }
 .center form {
