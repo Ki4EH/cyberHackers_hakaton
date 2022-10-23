@@ -1,5 +1,5 @@
 from flask import Flask, render_template, url_for, request, redirect
-import sqlite3
+import hashlib
 
 from flask_sqlalchemy import SQLAlchemy
 
@@ -10,39 +10,33 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
 
-class User(db.Model):
+class UserLogin(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    email = db.Column(db.String(30), nullable=False)
+    username = db.Column(db.String(30), nullable=False)
     password = db.Column(db.String(30), nullable=False)
+    email = db.Column(db.String(30), nullable=True)
+    phone = db.Column(db.String(30), nullable=True)
 
     def __repr__(self):
-        return '<User %r>' % self.id
-# @staticmethod
-# def add_new_user(name, password):
-#     connection = sqlite3.connect(f'data/db/users.db')
-#     cursor = connection.cursor()
-#
-#     cursor.execute(
-#         """CREATE TABLE IF NOT EXISTS user(id INTEGER PRIMARY KEY, name STRING, password STRING)""")
-#     connection.commit()
-#
-#     new_user = [name, password]
-#     cursor.execute(f"SELECT * FROM users WHERE name = {name}")
-#
-#     if cursor.fetchone() is not None:
-#         cursor.execute(f"DELETE FROM users WHERE name = {name}")
-#         connection.commit()
-#     cursor.execute("INSERT INTO users(name, password) values(?, ?);", new_user)
-#     connection.commit()
+        return '<UserLogin %r>' % self.id
+
+
+class UserData(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    first_name = db.Column(db.String(30), nullable=False)
+    last_name = db.Column(db.String(30), nullable=False)
+
+    def __repr__(self):
+        return '<UserData %r>' % self.id
 
 
 @app.route('/', methods=['POST', 'GET'])
-def index():
+def login():
     if request.method == 'POST':
         email = request.form['email']
         password = request.form['password']
 
-        new_user = User(email=email, password=password)
+        new_user = UserLogin(email=email, password=password)
         try:
             db.session.add(new_user)
             db.session.commit()
@@ -54,9 +48,45 @@ def index():
         return render_template("login.html")
 
 
-@app.route('/user/<string:name>/<int:id_>')
-def user(name, id_):
-    return f"page {name} with id {id_}"
+@app.route('/registration', methods=['POST', 'GET'])
+def registration():
+    if request.method == 'POST':
+
+        username = 'username1'  # request.form['username']
+        password = hashlib.sha256(request.form['password'].encode('utf-8')).hexdigest()
+        email = request.form['email']
+        phone = ''  # request.form['phone']
+
+        first_name = request.form['first_name']
+        last_name = request.form['last_name']
+
+        if len(UserLogin.query.filter(UserLogin.username == username).all()) != 0:
+            return 'Error 200 login_not_available'
+
+        if len(UserLogin.query.filter(UserLogin.email == email).all()) != 0:
+            return 'Error 200 mail_not_available'
+
+        new_userLogin = UserLogin(username=username, password=password, email=email, phone=phone)
+        new_userData = UserData(first_name=first_name, last_name=last_name)
+        try:
+            db.session.add(new_userLogin)
+            db.session.commit()
+
+            db.session.add(new_userData)
+            db.session.commit()
+
+            return redirect(f'/user/{username}')
+        except Exception as ex:
+            print(ex)
+            return "DB ERROR"
+
+    else:
+        return render_template("registration.html")
+
+
+@app.route('/user/<string:email>')
+def user(email):
+    return f"page {email}"
 
 
 if __name__ == '__main__':
