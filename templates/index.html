@@ -1,42 +1,35 @@
-{% extends 'base.html' %}
+<html lang="ru">
 
+<head>
+  <meta charset="UTF-8">
+  <title>
+    Авторизация
+  </title>
+  <link rel="stylesheet" href="/static/css/main.css">
+</head>
 
-{% block title %}
-Главная страница
-{% endblock %}
-
-
-
-
-
-{% block body %}
-
-
-
-
-
-
-
-<div class="container">
+<body>
+  <div class="center">
+    <h1>Авторизация</h1>
     <form method="post">
-    <h1 class="h3 mb-3 fw-normal">Please sign in</h1>
-
-    <div class="form-floating">
-      <input name="email" class="form-control" id="email" placeholder="name@example.com">
-      <label for="email">Email address</label>
-    </div>
-    <div class="form-floating">
-      <input name="password" class="form-control" id="password" placeholder="Password">
-      <label for="password">Password</label>
-    </div>
-
-
-    <input class="btn btn-success" type="submit">Sign in</input>
-  </form>
-</div>
-
-
-
-
-
-{% endblock %}
+      <div class="txt_field">
+        <input type="text" required>
+        <span></span>
+        <label>E-mail</label>
+      </div>
+      <div class="txt_field">
+        <input type="password" required>
+        <span></span>
+        <label>Пароль</label>
+      </div>
+      <div class="pass">
+        Забыли пароль?
+      </div>
+      <input type="submit" value="Войти">
+      <div class="singup_link">
+        Нет аккаунта? <a href="#">Зарегестрироваться</a>
+      </div>
+    </form>
+  </div>
+</body>
+</html>
