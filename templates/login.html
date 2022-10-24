@@ -17,7 +17,7 @@
             {% if messages %}
                 <ul class=flashes>
                     {% for message in messages %}
-                        <li>{{ message }}</li>
+                        <a>{{ message }}</a>
                     {% endfor %}
                 </ul>
             {% endif %}
@@ -26,9 +26,9 @@
 
     <form method="post">
       <div class="txt_field">
-        <input type="text" name="email" required>
+        <input type="text" name="username" required>
         <span></span>
-        <label>E-mail</label>
+        <label>Никнейм</label>
       </div>
       <div class="txt_field">
         <input type="password" name="password" required>
