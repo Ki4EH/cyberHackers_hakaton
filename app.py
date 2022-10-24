@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from flask import Flask, render_template, url_for, request, redirect
 import hashlib
 
@@ -30,32 +32,52 @@ class UserData(db.Model):
         return '<UserData %r>' % self.id
 
 
+class Session(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    access_token = db.Column(db.String(48), nullable=False)
+    refresh_token = db.Column(db.String(48), nullable=False)
+    type = db.Column(db.String(32), nullable=False)
+    user_id = db.Column(db.Integer, nullable=False)
+    start_time = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+
+    def __repr__(self):
+        return '<Session %r>' % self.id
+
+
 @app.route('/', methods=['POST', 'GET'])
 def login():
     if request.method == 'POST':
-        username = 'username123' # request.form['username']
+        username = 'username123'  # request.form['username']
         password = hashlib.sha256(request.form['password'].encode('utf-8')).hexdigest()
+        return session_start(username=username, password=password, grant_type='password')
 
-        for un, pw in db.session.query(UserLogin.username, UserLogin.password):
-            if un == username:
-                if pw == password:
-                    return redirect(f'/user/{username}')
-                else:
-                    return 'ERROR 404 incorrect_password'
-        return 'ERROR 404 User not found'
-
-        # new_user = UserLogin(email=email, password=password)
-        # try:
-        #     db.session.add(new_user)
-        #     db.session.commit()
-        #     return redirect('/')
-        # except Exception as ex:
-        #     print(ex)
-        #     return "DB ERROR"
     else:
         return render_template("login.html")
 
-# def session_start(username,password,grant_type):
+
+@app.route('/', methods=['GET'])
+def session_start(username, password, grant_type):
+    for id_, un, pw in db.session.query(UserLogin.id, UserLogin.username, UserLogin.password):
+        if un == username:
+            # userr = UserLogin.query.get(id_)
+            # print(userr.username)
+            if pw == password:
+                new_session = Session(access_token='access_token', refresh_token='refresh_token', type=grant_type, user_id=id_)
+                db.session.add(new_session)
+                db.session.commit()
+                return redirect(f'/user/{username}')
+            else:
+                return 'ERROR 404 incorrect_password'
+    return 'ERROR 404 User not found'
+
+
+@app.route('/', methods=['GET'])
+def session_refresh(grant_type, refresh_token):
+    session = Session.query.get_or_404(refresh_token)
+    user_id = session.user_id
+    new_access_token = 'new_access_token'
+    session.access_token = new_access_token
+
 
 
 
