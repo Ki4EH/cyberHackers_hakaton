@@ -32,7 +32,6 @@ def load_user(user_id):
     return UserLogin.query.get(user_id)
 
 
-
 class UserData(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     first_name = db.Column(db.String(30), nullable=False)
@@ -111,8 +110,7 @@ def session_refresh(grant_type, refresh_token):
 @app.route('/registration', methods=['POST', 'GET'])
 def registration():
     if request.method == 'POST':
-
-        username = 'username123456'  # request.form['username']
+        username = 'username123333'  # request.form['username']
         password = hashlib.sha256(request.form['password'].encode('utf-8')).hexdigest()
         email = request.form['email']
         phone = ''  # request.form['phone']
@@ -120,25 +118,27 @@ def registration():
         first_name = request.form['first_name']
         last_name = request.form['last_name']
 
-        if len(UserLogin.query.filter(UserLogin.username == username).all()) != 0:
-            return 'Error 200 login_not_available'
+        if UserLogin.query.filter(UserLogin.username == username).all():
+            flash('Error 200 login_not_available')
+            return render_template("registration.html")
 
-        if len(UserLogin.query.filter(UserLogin.email == email).all()) != 0:
-            return 'Error 200 mail_not_available'
+        elif UserLogin.query.filter(UserLogin.email == email).all() :
+            flash('Error 200 mail_not_available')
+            return render_template("registration.html")
+        else:
+            new_userLogin = UserLogin(username=username, password=password, email=email, phone=phone)
+            new_userData = UserData(first_name=first_name, last_name=last_name)
+            try:
+                db.session.add(new_userLogin)
+                db.session.commit()
 
-        new_userLogin = UserLogin(username=username, password=password, email=email, phone=phone)
-        new_userData = UserData(first_name=first_name, last_name=last_name)
-        try:
-            db.session.add(new_userLogin)
-            db.session.commit()
+                db.session.add(new_userData)
+                db.session.commit()
 
-            db.session.add(new_userData)
-            db.session.commit()
-
-            return redirect(f'/user/{username}')
-        except Exception as ex:
-            print(ex)
-            return "DB ERROR"
+                return redirect(f'/user/{username}')
+            except Exception as ex:
+                print(ex)
+                return "DB ERROR"
 
     else:
         return render_template("registration.html")
