@@ -98,7 +98,8 @@ input[type="submit"] {
 
 }
 input[type="submit"]:hover {
-    border-color: #2691d9;
+    /* border-color: #2691d9; */
+    border-color: #404e7c;
     transition: .5s;
 }
 .singup_link{
