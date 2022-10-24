@@ -1,15 +1,19 @@
 from datetime import datetime
 
-from flask import Flask, render_template, url_for, request, redirect
+from flask import Flask, render_template, request, redirect, flash
 import hashlib
+from flask_login import LoginManager, UserMixin
 
 from flask_sqlalchemy import SQLAlchemy
 
 app = Flask(__name__)
+app.secret_key = 'a'
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///users.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
+
+login_manager = LoginManager()
 
 
 class UserLogin(db.Model):
@@ -21,6 +25,12 @@ class UserLogin(db.Model):
 
     def __repr__(self):
         return '<UserLogin %r>' % self.id
+
+
+@login_manager.user_loader
+def load_user(user_id):
+    return UserLogin.query.get(user_id)
+
 
 
 class UserData(db.Model):
@@ -38,7 +48,7 @@ class Session(db.Model):
     refresh_token = db.Column(db.String(48), nullable=False)
     type = db.Column(db.String(32), nullable=False)
     user_id = db.Column(db.Integer, nullable=False)
-    start_time = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    start_time = db.Column(db.String, default=datetime.utcnow(), nullable=False)
 
     def __repr__(self):
         return '<Session %r>' % self.id
@@ -47,7 +57,7 @@ class Session(db.Model):
 @app.route('/', methods=['POST', 'GET'])
 def login():
     if request.method == 'POST':
-        username = 'username123'  # request.form['username']
+        username = 'username1234567'  # request.form['username']
         password = hashlib.sha256(request.form['password'].encode('utf-8')).hexdigest()
         return session_start(username=username, password=password, grant_type='password')
 
@@ -57,18 +67,37 @@ def login():
 
 @app.route('/', methods=['GET'])
 def session_start(username, password, grant_type):
-    for id_, un, pw in db.session.query(UserLogin.id, UserLogin.username, UserLogin.password):
-        if un == username:
-            # userr = UserLogin.query.get(id_)
-            # print(userr.username)
-            if pw == password:
-                new_session = Session(access_token='access_token', refresh_token='refresh_token', type=grant_type, user_id=id_)
-                db.session.add(new_session)
-                db.session.commit()
-                return redirect(f'/user/{username}')
-            else:
-                return 'ERROR 404 incorrect_password'
-    return 'ERROR 404 User not found'
+
+    current_user = UserLogin.query.filter_by(username=username).first()
+    if current_user:
+        if current_user.password == password:
+            # login_user(user)
+            new_session = Session(access_token='access_token',
+                                  refresh_token='refresh_token',
+                                  type=grant_type,
+                                  user_id=current_user.id)
+            db.session.add(new_session)
+            db.session.commit()
+            return redirect(f'/user/{username}')
+
+        else:
+            flash('Неправильный пароль')
+    else:
+        flash('Пользователь с таким именем не найден')
+    return render_template('login.html')
+    # for id_, un, pw in db.session.query(UserLogin.id, UserLogin.username, UserLogin.password):
+    #     if un == username:
+    #         # userr = UserLogin.query.get(id_)
+    #         # print(userr.username)
+    #         if pw == password:
+    #             new_session = Session(access_token='access_token', refresh_token='refresh_token', type=grant_type,
+    #                                   user_id=id_)
+    #             db.session.add(new_session)
+    #             db.session.commit()
+    #             return redirect(f'/user/{username}')
+    #         else:
+    #             return 'ERROR 404 incorrect_password'
+    # return 'ERROR 404 User not found'
 
 
 @app.route('/', methods=['GET'])
@@ -79,13 +108,11 @@ def session_refresh(grant_type, refresh_token):
     session.access_token = new_access_token
 
 
-
-
 @app.route('/registration', methods=['POST', 'GET'])
 def registration():
     if request.method == 'POST':
 
-        username = 'username123'  # request.form['username']
+        username = 'username123456'  # request.form['username']
         password = hashlib.sha256(request.form['password'].encode('utf-8')).hexdigest()
         email = request.form['email']
         phone = ''  # request.form['phone']
@@ -115,6 +142,12 @@ def registration():
 
     else:
         return render_template("registration.html")
+
+
+# @app.route('/logout', methods=['POST', 'GET'])
+# def logout():
+#     logout_user()
+#     return redirect('/')
 
 
 @app.route('/user/<string:email>')

@@ -12,6 +12,18 @@
 <body>
   <div class="center">
     <h1>Авторизация</h1>
+
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                <ul class=flashes>
+                    {% for message in messages %}
+                        <li>{{ message }}</li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+        {% endwith %}
+
+
     <form method="post">
       <div class="txt_field">
         <input type="text" name="email" required>
