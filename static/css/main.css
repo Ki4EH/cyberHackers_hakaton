@@ -4,7 +4,7 @@ body {
     font-family: monospace;
     background: linear-gradient(145deg, #404e7c, #251f47);
     height: 100vh;
-    overflow: hidden;
+    /* overflow: hidden; */
 }
 .center {
     position: absolute;
@@ -68,7 +68,7 @@ form .txt_field {
     background: #2691d9;
     transition: .5s;
 }
-.txt_field input:focus ~ label{
+.txt_field input:focus ~ label, input:valid ~ label{
     top: -5px;
     color: #2691d9;
 }
