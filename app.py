@@ -33,26 +33,37 @@ class UserData(db.Model):
 @app.route('/', methods=['POST', 'GET'])
 def login():
     if request.method == 'POST':
-        email = request.form['email']
-        password = request.form['password']
+        username = 'username123' # request.form['username']
+        password = hashlib.sha256(request.form['password'].encode('utf-8')).hexdigest()
 
-        new_user = UserLogin(email=email, password=password)
-        try:
-            db.session.add(new_user)
-            db.session.commit()
-            return redirect('/')
-        except Exception as ex:
-            print(ex)
-            return "DB ERROR"
+        for un, pw in db.session.query(UserLogin.username, UserLogin.password):
+            if un == username:
+                if pw == password:
+                    return redirect(f'/user/{username}')
+                else:
+                    return 'ERROR 404 incorrect_password'
+        return 'ERROR 404 User not found'
+
+        # new_user = UserLogin(email=email, password=password)
+        # try:
+        #     db.session.add(new_user)
+        #     db.session.commit()
+        #     return redirect('/')
+        # except Exception as ex:
+        #     print(ex)
+        #     return "DB ERROR"
     else:
         return render_template("login.html")
+
+# def session_start(username,password,grant_type):
+
 
 
 @app.route('/registration', methods=['POST', 'GET'])
 def registration():
     if request.method == 'POST':
 
-        username = 'username1'  # request.form['username']
+        username = 'username123'  # request.form['username']
         password = hashlib.sha256(request.form['password'].encode('utf-8')).hexdigest()
         email = request.form['email']
         phone = ''  # request.form['phone']
