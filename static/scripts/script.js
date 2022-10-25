@@ -2,8 +2,11 @@
 const month_list_pad = ['Января','Февраля','Марта','Апреля','Мая','Июня','Июля','Августа','Сентября','Октября','Ноября','Декабря'];
 var today_date_cont = document.querySelector('.today-is-heading');
 var today_is = new Date();
-today_is_cont = today_is.getDate() + ' ' + month_list_pad[today_is.getMonth()];
-today_date_cont.textContent = 'Сегодня, ' + today_is_cont;
+var make_today = function() {
+    today_is_cont = today_is.getDate() + ' ' + month_list_pad[today_is.getMonth()];
+    today_date_cont.textContent = 'Сегодня, ' + today_is_cont;
+}
+make_today();
 
 
 var Cal = function(divId) {
@@ -109,6 +112,7 @@ var Cal = function(divId) {
         c.nextMonth();
         if (window.crMonth === today_is.getMonth()){
             totoday(1);
+            make_today();
         } else {
             totoday(0);
         }
@@ -117,6 +121,7 @@ var Cal = function(divId) {
         c.previousMonth();
         if (window.crMonth === today_is.getMonth()){
             totoday(1);
+            make_today();
         } else {
             totoday(0);
         }
@@ -126,6 +131,7 @@ var Cal = function(divId) {
         for (var i=1; i < 32; i++)
         {
             let caldayscur = 'cal-days' + i;
+            let crDay = i;
             getId(caldayscur).onclick = function() {
                 if (x === 1)
                 {
@@ -134,8 +140,13 @@ var Cal = function(divId) {
                 } else {
                     x = 1
                 }
-                    getId(caldayscur).classList.remove('normal');
-                    getId(caldayscur).classList.add('today');
+                getId(caldayscur).classList.remove('normal');
+                getId(caldayscur).classList.add('today');
+                today_date_cont.textContent = crDay + ' ' + month_list_pad[window.crMonth];
+                console.log(crDay, today_is.getDate())
+                if (window.crMonth === today_is.getMonth() && crDay === today_is.getDate()) {
+                    make_today();
+                }
             }
         }
     }
