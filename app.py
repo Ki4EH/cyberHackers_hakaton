@@ -209,8 +209,12 @@ def confirm_email(token):
             return 'DB_ERROR'
         return render_template("info.html", info=f'Вы успешно зарегистрировались\nВаш никнейм {current_user.username} ')
     except SignatureExpired:
-        render_template("info.html", info='Время действия токена превышено')
+        return render_template("info.html", info='Время действия токена превышено')
 
+
+@app.route('/homepage')
+def homepage():
+    return render_template("homepage.html")
 
 
 @app.route('/user/<string:email>')
