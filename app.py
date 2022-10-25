@@ -212,14 +212,76 @@ def confirm_email(token):
         return render_template("info.html", info='Время действия токена превышено')
 
 
-@app.route('/homepage')
-def homepage():
-    return render_template("homepage.html")
 
 
 @app.route('/user/<string:email>')
 def user(email):
     return f"page {email} "
+
+
+
+
+# dashboard
+
+
+
+
+class Course(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String, nullable=False)
+    description = db.Column(db.String, nullable=True)
+
+    def __repr__(self):
+        return '<Course %r>' % self.id
+
+
+class Lecture(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String, nullable=False)
+    description = db.Column(db.String, nullable=True)
+    date = db.Column(db.String, nullable=False)
+    course_id = db.Column(db.Integer, nullable=False)
+
+    def __repr__(self):
+        return '<Lecture %r>' % self.id
+
+
+@app.route('/homepage')
+def homepage():
+    return render_template("homepage.html")
+
+
+@app.route('/homepage/new_course', methods=['POST', 'GET'])
+def new_course():
+    title = request.form['title']
+    description = request.form['description']
+    course = Course(title=title, description=description)
+    try:
+        db.session.add(course)
+        db.session.commit()
+    except Exception:
+        return 'DB_ERROR'
+
+    return render_template("new_course.html")
+
+
+@app.route('/homepage/new_lecture', methods=['POST', 'GET'])
+def new_lecture():
+    title = request.form['title']
+    description = request.form['description']
+    date = request.form['date']
+    course_id = request.form['course_id']
+
+
+    lecture = Lecture(title=title, description=description, date=date, course_id=course_id)
+    try:
+        db.session.add(lecture)
+        db.session.commit()
+    except Exception:
+        return 'DB_ERROR'
+
+    return render_template("new_lecture.html")
+
 
 
 if __name__ == '__main__':
