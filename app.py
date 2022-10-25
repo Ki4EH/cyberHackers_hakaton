@@ -1,19 +1,19 @@
-from datetime import datetime
-
 from flask import Flask, render_template, request, redirect, flash
 import hashlib
+from datetime import datetime
+
 from flask_login import LoginManager, UserMixin
 
 from flask_sqlalchemy import SQLAlchemy
 
 app = Flask(__name__)
-app.secret_key = 'a'
+app.secret_key = 'abd'
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///users.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
 
-login_manager = LoginManager()
+
 
 
 class UserLogin(db.Model):
@@ -25,11 +25,6 @@ class UserLogin(db.Model):
 
     def __repr__(self):
         return '<UserLogin %r>' % self.id
-
-
-@login_manager.user_loader
-def load_user(user_id):
-    return UserLogin.query.get(user_id)
 
 
 class UserData(db.Model):
@@ -53,10 +48,11 @@ class Session(db.Model):
         return '<Session %r>' % self.id
 
 
+
 @app.route('/', methods=['POST', 'GET'])
 def login():
     if request.method == 'POST':
-        username = 'username1234567'  # request.form['username']
+        username = request.form['username']
         password = hashlib.sha256(request.form['password'].encode('utf-8')).hexdigest()
         return session_start(username=username, password=password, grant_type='password')
 
@@ -66,37 +62,28 @@ def login():
 
 @app.route('/', methods=['GET'])
 def session_start(username, password, grant_type):
-
     current_user = UserLogin.query.filter_by(username=username).first()
+
     if current_user:
         if current_user.password == password:
-            # login_user(user)
             new_session = Session(access_token='access_token',
                                   refresh_token='refresh_token',
                                   type=grant_type,
                                   user_id=current_user.id)
-            db.session.add(new_session)
-            db.session.commit()
+            try:
+                db.session.add(new_session)
+                db.session.commit()
+            except Exception:
+                return "DB ERROR"
+
             return redirect(f'/user/{username}')
 
         else:
             flash('Неправильный пароль')
+
     else:
         flash('Пользователь с таким именем не найден')
     return render_template('login.html')
-    # for id_, un, pw in db.session.query(UserLogin.id, UserLogin.username, UserLogin.password):
-    #     if un == username:
-    #         # userr = UserLogin.query.get(id_)
-    #         # print(userr.username)
-    #         if pw == password:
-    #             new_session = Session(access_token='access_token', refresh_token='refresh_token', type=grant_type,
-    #                                   user_id=id_)
-    #             db.session.add(new_session)
-    #             db.session.commit()
-    #             return redirect(f'/user/{username}')
-    #         else:
-    #             return 'ERROR 404 incorrect_password'
-    # return 'ERROR 404 User not found'
 
 
 @app.route('/', methods=['GET'])
@@ -110,20 +97,20 @@ def session_refresh(grant_type, refresh_token):
 @app.route('/registration', methods=['POST', 'GET'])
 def registration():
     if request.method == 'POST':
-        username = 'username123333'  # request.form['username']
+        username = request.form['username']
         password = hashlib.sha256(request.form['password'].encode('utf-8')).hexdigest()
         email = request.form['email']
-        phone = ''  # request.form['phone']
+        phone = request.form['phone']
 
         first_name = request.form['first_name']
         last_name = request.form['last_name']
 
         if UserLogin.query.filter(UserLogin.username == username).all():
-            flash('Error 200 login_not_available')
+            flash('Этот логин недоступен')
             return render_template("registration.html")
 
-        elif UserLogin.query.filter(UserLogin.email == email).all() :
-            flash('Error 200 mail_not_available')
+        elif UserLogin.query.filter(UserLogin.email == email).all():
+            flash('Эта почта недоступна')
             return render_template("registration.html")
         else:
             new_userLogin = UserLogin(username=username, password=password, email=email, phone=phone)
@@ -136,18 +123,12 @@ def registration():
                 db.session.commit()
 
                 return redirect(f'/user/{username}')
+
             except Exception as ex:
-                print(ex)
                 return "DB ERROR"
 
     else:
         return render_template("registration.html")
-
-
-# @app.route('/logout', methods=['POST', 'GET'])
-# def logout():
-#     logout_user()
-#     return redirect('/')
 
 
 @app.route('/user/<string:email>')
