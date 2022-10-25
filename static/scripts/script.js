@@ -1,0 +1,10 @@
+const month_list = ['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
+const month_list_pad = ['Января','Февраля','Марта','Апреля','Мая','Июня','Июля','Августа','Сентября','Октября','Ноября','Декабря'];
+var today_date_cont = document.querySelector('.today-is-heading');
+var today_is = new Date();
+today_is_cont = today_is.getDate() + ' ' + month_list_pad[today_is.getMonth()];
+today_date_cont.textContent = 'Сегодня, ' + today_is_cont;
+var cal_date = document.querySelector('.calendar-date');
+cal_date.textContent = month_list[today_is.getMonth()];
+var cal_year = document.querySelector('.calendar-year');
+cal_year.textContent = today_is.getFullYear()

@@ -1,9 +1,6 @@
 html {
     background-color: rgb(30, 30, 30);
 }
-body {
-    font-family: monospace;
-}
 h1 {
     color: white;
     margin: 50px auto;
@@ -13,8 +10,7 @@ h1 {
 }
 
 nav {
-    background-color: rgb(10, 81, 152);
-    text-align: center;
+    background: #343965;
     position: fixed;
     top: 0;
     right: 0;
@@ -30,11 +26,10 @@ nav {
     color: white;
     text-align: center;
     font: 16pt serif;
-    border-radius: 15px;
-    background-color: rgb(10, 81, 152);
+    background-color: #343965;
     margin-left: 2%;
     padding-top: 1%;
-    padding-bottom: 15px ;
+    padding-bottom: 0.6%;
     width: 13%;
     height: 80%;
     display: inline-block;
@@ -44,8 +39,8 @@ nav {
 .nav-item:hover {
     color: white;
     text-align: center;
-    font: 16pt;
-    background-color: rgb(5, 60, 114);
+    font: 16pt serif;
+    background-color: #2a2e52;
     margin-left: 2%;
     padding-top: 1%;
     padding-bottom: 0.6%;
@@ -54,7 +49,7 @@ nav {
     display: inline-block;
     position: relative;
     top: 10%;
-    border-radius: 5px;
+    border-radius: 2px;
 }
 
 .today-container {
@@ -76,12 +71,12 @@ nav {
 }
 
 .calendar {
-    background-color: rgb(60, 60, 60);
-    width: 32%;
-    height: 270px;
-    margin-left: 4.8%;
-    border-radius: 10px;
     display: inline-block;
+    position: relative;
+    width: 32%;
+    margin-left: 4.7%;
+    top: -16px;
+
 }
 .lectures-container {
     background-color: rgb(60, 60, 60);
@@ -90,4 +85,79 @@ nav {
     margin-top: 25px;
     margin-left: 5%;
     border-radius: 10px;
+}
+
+/*///////////////////////*/
+
+ul {list-style-type: none;}
+body {font-family: Verdana, sans-serif;}
+
+.month {
+    padding: 6px 0;
+    border-top-left-radius: 10px;
+    border-top-right-radius: 10px;
+    width: 100%;
+    background: rgb(10, 81, 152);
+    text-align: center;
+}
+
+.month ul {
+    margin: 0;
+    padding: 0;
+}
+
+.month ul li {
+    color: white;
+    font-size: 20px;
+    text-transform: uppercase;
+    letter-spacing: 3px;
+}
+
+.month .prev {
+    float: left;
+    padding-top: 10px;
+    margin-left: 10px;
+}
+
+.month .next {
+    float: right;
+    padding-top: 10px;
+    margin-right: 10px;
+}
+
+.weekdays {
+    margin: 0;
+    padding: 10px 0;
+    background-color: #ddd;
+}
+
+.weekdays li {
+    display: inline-block;
+    width: 13%;
+    color: #666;
+    text-align: center;
+}
+
+.days {
+    padding: 5px 0;
+    background: #eee;
+    margin: 0;
+    border-bottom-left-radius: 10px;
+    border-bottom-right-radius: 10px;
+}
+
+.days li {
+    list-style-type: none;
+    display: inline-block;
+    width: 13%;
+    text-align: center;
+    margin-bottom: 10px;
+    font-size:12px;
+    color: #777;
+}
+
+.days li .active {
+    padding: 5px;
+    background: rgb(10, 81, 152);
+    color: white !important
 }
