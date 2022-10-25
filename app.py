@@ -117,7 +117,7 @@ def registration():
         last_name = request.form['last_name']
 
         if UserLogin.query.filter(UserLogin.username == username).all():
-            flash('Этот логин недоступен')
+            flash('Этот никнейм недоступен')
             return render_template("registration.html")
 
         elif UserLogin.query.filter(UserLogin.email == email).all():
@@ -207,7 +207,7 @@ def confirm_email(token):
             db.session.commit()
         except Exception:
             return 'DB_ERROR'
-        return redirect(f'/user/{current_user.username}')
+        return render_template("info.html", info=f'Вы успешно зарегистрировались\nВаш никнейм {current_user.username} ')
     except SignatureExpired:
         render_template("info.html", info='Время действия токена превышено')
 
@@ -215,7 +215,7 @@ def confirm_email(token):
 
 @app.route('/user/<string:email>')
 def user(email):
-    return f"page {email}"
+    return f"page {email} "
 
 
 if __name__ == '__main__':
