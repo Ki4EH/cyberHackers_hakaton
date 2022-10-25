@@ -1,27 +1,39 @@
-from flask import Flask, render_template, request, redirect, flash
 import hashlib
+import random
 from datetime import datetime
 
-from flask_login import LoginManager, UserMixin
-
+from flask import Flask, render_template, request, redirect, flash, url_for
 from flask_sqlalchemy import SQLAlchemy
+from flask_mail import Mail, Message
+
+from itsdangerous import URLSafeTimedSerializer, SignatureExpired
 
 app = Flask(__name__)
-app.secret_key = 'abd'
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///users.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
+app.config['SECRET_KEY'] = 'NAZVANIE_KOMANDI_ZVEZDOCHKA'
+app.config['MAIL_SERVER'] = 'smtp.mail.ru'
+app.config['MAIL_PORT'] = 465
+app.config['MAIL_USE_SSL'] = True
+app.config['MAIL_USERNAME'] = 'artem_konovalov2005@mail.ru'
+app.config['MAIL_DEFAULT_SENDER'] = 'artem_konovalov2005@mail.ru'  # закинуть в переменные среды
+app.config['MAIL_PASSWORD'] = '5vytGAzLURLzswzvg3S1'
+
 db = SQLAlchemy(app)
 
+mail = Mail(app)
 
+s = URLSafeTimedSerializer(app.config['SECRET_KEY'])
 
 
 class UserLogin(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(30), nullable=False)
     password = db.Column(db.String(30), nullable=False)
-    email = db.Column(db.String(30), nullable=True)
-    phone = db.Column(db.String(30), nullable=True)
+    email = db.Column(db.String(30), nullable=False)
+    email_confirm = db.Column(db.String(30), default='False', nullable=False) # переделать стринг в бул или инт
+    phone = db.Column(db.String(30), nullable=False)
 
     def __repr__(self):
         return '<UserLogin %r>' % self.id
@@ -46,7 +58,6 @@ class Session(db.Model):
 
     def __repr__(self):
         return '<Session %r>' % self.id
-
 
 
 @app.route('/', methods=['POST', 'GET'])
@@ -122,13 +133,84 @@ def registration():
                 db.session.add(new_userData)
                 db.session.commit()
 
-                return redirect(f'/user/{username}')
-
             except Exception as ex:
+                print(ex)
                 return "DB ERROR"
+            token = s.dumps(email, salt='email-confirm')
+            msg = Message('Confirm Email', recipients=[email])
+            link = url_for('confirm_email', token=token, _external=True)
+            msg.body = f'Чтобы подтвердить вашу почту к аккуанту {username}' \
+                       f' перейдите по ссылке:\n{link}'
+            mail.send(msg)
+            return render_template("info.html", info=f'Вам отправлено письмо для подтверждения почты {email}\nСсылка действует 1 час')
 
     else:
         return render_template("registration.html")
+
+
+@app.route('/reset_password', methods=['POST', 'GET'])
+def reset_password():
+    if request.method == 'POST':
+        email = request.form['email']
+        current_user = UserLogin.query.filter(UserLogin.email == email).first()
+        if current_user:
+            if current_user.email_confirm == 'True':
+                token = s.dumps(email, salt='email-confirm')
+                msg = Message('Reset password', recipients=[email])
+                link = url_for('reset_password_success', token=token, _external=True)
+                msg.body = f'Чтобы сменить пароль перейдите по ссылке:\n{link}'
+                mail.send(msg)
+
+            else:
+                flash('Почта не подтверждена')
+                return render_template("reset_password.html")
+        else:
+            flash('Почта не существует')
+            return render_template("reset_password.html")
+
+        return render_template("info.html", info='На вашу почту отправлена ссылка для смены пароля.\nСсылка действует 1 час')
+    else:
+        return render_template("reset_password.html")
+
+
+@app.route('/reset_password_success/<token>')
+def reset_password_success(token):
+    try:
+        email = s.loads(token, salt='email-confirm', max_age=3600)
+        current_user = UserLogin.query.filter(UserLogin.email == email).first()
+
+        new_password = ''
+
+        for x in range(16):
+            new_password = new_password + random.choice(list('1234567890abcdefghigklmnopqrstuvyxwzABCDEFGHIGKLMNOPQRSTUVYXWZ'))
+
+        new_password_hash = hashlib.sha256(new_password.encode('utf-8')).hexdigest()
+
+        current_user.password = new_password_hash
+        try:
+            db.session.commit()
+        except Exception:
+            return 'DB_ERROR'
+
+        return render_template("info.html", info=f'Пароль для аккаунта {current_user.username} изменен\nВаш новый пароль: {new_password} ')
+    except SignatureExpired:
+        return render_template("info.html", info='Время действия токена превышено')
+
+
+@app.route('/confirm_email/<token>')
+def confirm_email(token):
+    try:
+        email = s.loads(token, salt='email-confirm', max_age=60)
+        current_user = UserLogin.query.filter(UserLogin.email == email).first()
+        current_user.email_confirm = 'True'
+        try:
+            db.session.commit()
+        except Exception:
+            return 'DB_ERROR'
+        return redirect(f'/user/{current_user.username}')
+    except SignatureExpired:
+        render_template("info.html", info='Время действия токена превышено')
+
 
 
 @app.route('/user/<string:email>')
