@@ -134,6 +134,9 @@ body {font-family: Verdana, sans-serif;}
     padding: 5px;
     text-align: center;
 }
+.normal:hover {
+    background-color: #4a4d6a;
+}
 .today {
     padding: 5px;
     text-align: center;

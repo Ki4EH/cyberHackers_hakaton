@@ -20,26 +20,31 @@ var Cal = function(divId) {
     this.Months =['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'];
     var d = new Date();
     this.currMonth = d.getMonth();
+    window.crMonth = this.currMonth;
     this.currYear = d.getFullYear();
     this.currDay = d.getDate();
   };
   Cal.prototype.nextMonth = function() {
     if ( this.currMonth == 11 ) {
       this.currMonth = 0;
+      window.crMonth = this.currMonth;
       this.currYear = this.currYear + 1;
     }
     else {
       this.currMonth = this.currMonth + 1;
+      window.crMonth = this.currMonth;
     }
     this.showcurr();
   };
   Cal.prototype.previousMonth = function() {
     if ( this.currMonth == 0 ) {
       this.currMonth = 11;
+      window.crMonth = this.currMonth;
       this.currYear = this.currYear - 1;
     }
     else {
       this.currMonth = this.currMonth - 1;
+      window.crMonth = this.currMonth;
     }
     this.showcurr();
   };
@@ -78,9 +83,9 @@ var Cal = function(divId) {
       var chkY = chk.getFullYear();
       var chkM = chk.getMonth();
       if (chkY == this.currYear && chkM == this.currMonth && i == this.currDay) {
-        html += '<td class="today">' + i + '</td>';
+        html += '<td class="today" id="cal-days' + i + '">' + i + '</td>';
       } else {
-        html += '<td class="normal">' + i + '</td>';
+        html += '<td class="normal" id="cal-days' + i + '">' + i + '</td>';
       }
       if ( dow == 0 ) {
         html += '</tr>';
@@ -101,12 +106,41 @@ var Cal = function(divId) {
     var c = new Cal("divCal");			
     c.showcurr();
     getId('btnNext').onclick = function() {
-      c.nextMonth();
+        c.nextMonth();
+        if (window.crMonth === today_is.getMonth()){
+            totoday(1);
+        } else {
+            totoday(0);
+        }
     };
     getId('btnPrev').onclick = function() {
-      c.previousMonth();
+        c.previousMonth();
+        if (window.crMonth === today_is.getMonth()){
+            totoday(1);
+        } else {
+            totoday(0);
+        }
     };
+    var totoday = function(x) {
+
+        for (var i=1; i < 32; i++)
+        {
+            let caldayscur = 'cal-days' + i;
+            getId(caldayscur).onclick = function() {
+                if (x === 1)
+                {
+                    document.querySelector('.today').classList.add('normal');
+                    document.querySelector('.today').classList.remove('today');
+                } else {
+                    x = 1
+                }
+                    getId(caldayscur).classList.remove('normal');
+                    getId(caldayscur).classList.add('today');
+            }
+        }
+    }
+    totoday(1);
   }
   function getId(id) {
     return document.getElementById(id);
-  }
+  };
