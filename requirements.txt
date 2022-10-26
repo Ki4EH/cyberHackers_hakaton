@@ -4,3 +4,6 @@ Flask-SQLAlchemy==3.0.2
 SQLAlchemy==1.4.42
 flask_mail==0.9.1
 
+
+DateTime~=4.7
+itsdangerous~=2.1.2

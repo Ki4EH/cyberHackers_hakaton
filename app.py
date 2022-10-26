@@ -1,18 +1,22 @@
 import hashlib
 import random
+import os
 from datetime import datetime
 
-from flask import Flask, render_template, request, redirect, flash, url_for
+from flask import Flask, render_template, request, redirect, flash, url_for, session
 from flask_sqlalchemy import SQLAlchemy
 from flask_mail import Mail, Message
+from flask_login import LoginManager, login_user, login_required, logout_user
 
 from itsdangerous import URLSafeTimedSerializer, SignatureExpired
+
+
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///users.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-app.config['SECRET_KEY'] = 'NAZVANIE_KOMANDI_ZVEZDOCHKA'
+app.config['SECRET_KEY'] = 'a8a254e5e35e48c7a2392fcc22f2840f1a271242'
 app.config['MAIL_SERVER'] = 'smtp.mail.ru'
 app.config['MAIL_PORT'] = 465
 app.config['MAIL_USE_SSL'] = True
@@ -24,7 +28,10 @@ db = SQLAlchemy(app)
 
 mail = Mail(app)
 
-s = URLSafeTimedSerializer(app.config['SECRET_KEY'])
+urlserializer = URLSafeTimedSerializer(app.config['SECRET_KEY'])
+
+login_manager = LoginManager(app)
+
 
 
 class UserLogin(db.Model):
@@ -35,9 +42,21 @@ class UserLogin(db.Model):
     email_confirm = db.Column(db.String(30), default='False', nullable=False) # переделать стринг в бул или инт
     phone = db.Column(db.String(30), nullable=False)
 
+    def is_active(self):
+        return True
+
+    def get_id(self):
+        return str(self.id)
+
+    def is_authenticated(self):
+        return True
+
     def __repr__(self):
         return '<UserLogin %r>' % self.id
 
+@login_manager.user_loader
+def load_user(user_id):
+    return UserLogin.query.get(user_id)
 
 class UserData(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -48,7 +67,7 @@ class UserData(db.Model):
         return '<UserData %r>' % self.id
 
 
-class Session(db.Model):
+class SessionDb(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     access_token = db.Column(db.String(48), nullable=False)
     refresh_token = db.Column(db.String(48), nullable=False)
@@ -77,14 +96,25 @@ def session_start(username, password, grant_type):
 
     if current_user:
         if current_user.password == password:
-            new_session = Session(access_token='access_token',
-                                  refresh_token='refresh_token',
+            login_user(current_user)
+
+            access_token = urlserializer.dumps(current_user.username, salt=os.urandom(8).hex())
+            refresh_token = urlserializer.dumps(current_user.username, salt=os.urandom(8).hex())
+            sessionDb = SessionDb(access_token=access_token,
+                                  refresh_token=refresh_token,
                                   type=grant_type,
                                   user_id=current_user.id)
+
+            session.permanent = True
+            session['access_token'] = access_token
+            session['refresh_token'] = refresh_token
+            session.modified = True
+
             try:
-                db.session.add(new_session)
+                db.session.add(sessionDb)
                 db.session.commit()
-            except Exception:
+            except Exception as ex:
+                print(ex)
                 return "DB ERROR"
 
             return redirect(f'/user/{username}')
@@ -99,10 +129,19 @@ def session_start(username, password, grant_type):
 
 @app.route('/', methods=['GET'])
 def session_refresh(grant_type, refresh_token):
-    session = Session.query.get_or_404(refresh_token)
-    user_id = session.user_id
-    new_access_token = 'new_access_token'
-    session.access_token = new_access_token
+    dbsession = SessionDb.query.get_or_404(refresh_token)
+    user_id = dbsession.user_id
+
+    new_access_token = urlserializer.dumps(user_id, salt=os.urandom(20).hex())
+    new_refresh_token = urlserializer.dumps(user_id, salt=os.urandom(20).hex())
+
+    dbsession.access_token = new_access_token
+    dbsession.refresh_token = new_refresh_token
+
+    session.permanent = True
+    session['access_token'] = new_access_token
+    session['refresh_token'] = new_refresh_token
+    session.modified = True
 
 
 @app.route('/registration', methods=['POST', 'GET'])
@@ -136,7 +175,7 @@ def registration():
             except Exception as ex:
                 print(ex)
                 return "DB ERROR"
-            token = s.dumps(email, salt='email-confirm')
+            token = urlserializer.dumps(email, salt='email-confirm')
             msg = Message('Confirm Email', recipients=[email])
             link = url_for('confirm_email', token=token, _external=True)
             msg.body = f'Чтобы подтвердить вашу почту к аккуанту {username}' \
@@ -155,7 +194,7 @@ def reset_password():
         current_user = UserLogin.query.filter(UserLogin.email == email).first()
         if current_user:
             if current_user.email_confirm == 'True':
-                token = s.dumps(email, salt='email-confirm')
+                token = urlserializer.dumps(email, salt='email-confirm')
                 msg = Message('Reset password', recipients=[email])
                 link = url_for('reset_password_success', token=token, _external=True)
                 msg.body = f'Чтобы сменить пароль перейдите по ссылке:\n{link}'
@@ -176,7 +215,7 @@ def reset_password():
 @app.route('/reset_password_success/<token>')
 def reset_password_success(token):
     try:
-        email = s.loads(token, salt='email-confirm', max_age=3600)
+        email = urlserializer.loads(token, salt='email-confirm', max_age=3600)
         current_user = UserLogin.query.filter(UserLogin.email == email).first()
 
         new_password = ''
@@ -200,7 +239,7 @@ def reset_password_success(token):
 @app.route('/confirm_email/<token>')
 def confirm_email(token):
     try:
-        email = s.loads(token, salt='email-confirm', max_age=60)
+        email = urlserializer.loads(token, salt='email-confirm', max_age=60)
         current_user = UserLogin.query.filter(UserLogin.email == email).first()
         current_user.email_confirm = 'True'
         try:
@@ -215,8 +254,9 @@ def confirm_email(token):
 
 
 @app.route('/user/<string:email>')
+@login_required
 def user(email):
-    return f"page {email} "
+    return f"page {email} {session.get('access_token')} {session.get('refresh_token')}"
 
 
 
@@ -271,7 +311,6 @@ def new_lecture():
     description = request.form['description']
     date = request.form['date']
     course_id = request.form['course_id']
-
 
     lecture = Lecture(title=title, description=description, date=date, course_id=course_id)
     try:
