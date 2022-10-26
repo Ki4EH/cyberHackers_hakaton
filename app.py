@@ -7,7 +7,7 @@ from datetime import datetime
 from flask import Flask, render_template, request, redirect, flash, url_for, session
 from flask_sqlalchemy import SQLAlchemy
 from flask_mail import Mail, Message
-from flask_login import LoginManager, login_user, login_required, logout_user
+from flask_login import LoginManager, login_user, login_required, logout_user, current_user
 
 from itsdangerous import URLSafeTimedSerializer, SignatureExpired
 
@@ -83,13 +83,18 @@ class SessionDb(db.Model):
 
 @app.route('/', methods=['POST', 'GET'])
 def login():
+
+
     if request.method == 'POST':
         username = request.form['username']
         password = hashlib.sha256(request.form['password'].encode('utf-8')).hexdigest()
         return session_start(username=username, password=password, grant_type='password')
 
     else:
-        return render_template("login.html")
+        if current_user.is_authenticated:
+            return redirect(f'/user/{current_user.username}')
+        else:
+            return render_template("login.html")
 
 
 @app.route('/', methods=['GET'])
@@ -98,7 +103,7 @@ def session_start(username, password, grant_type):
 
     if current_user:
         if current_user.password == password:
-            login_user(current_user)
+            login_user(current_user, remember=True)
 
             access_token = urlserializer.dumps(os.urandom(8).hex())
             refresh_token = urlserializer.dumps(os.urandom(8).hex())
@@ -253,6 +258,8 @@ def confirm_email(token):
         email = urlserializer.loads(token, salt='email-confirm', max_age=60)
         current_user = UserLogin.query.filter(UserLogin.email == email).first()
         current_user.email_confirm = 'True'
+
+        login_user(current_user, remember=True)
         try:
             db.session.commit()
         except Exception:
@@ -322,8 +329,9 @@ def new_lecture():
 
 
 @app.route('/user/<string:email>')
-# @login_required
+@login_required
 def user(email):
+    logout_user()
     # return f"page {email} {session.get('access_token')} {session.get('refresh_token')}"
     # app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///dashboard.db'
     lectures = Lecture.query.filter(Lecture.date == str(datetime.now().date())).all()

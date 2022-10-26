@@ -18,9 +18,6 @@
 
     {% for lecture in lectures %}
     <h2 >{{ lecture.title }}</h2>
-<!--    {% if lecture.title == 'первая' %}-->
-<!--    <h2 >Ок</h2>-->
-<!--    {% endif %}-->
     <p>{{ lecture.description }}</p>
     <p>Курс - {{ courses_dict[lecture.course_id]}}</p>
     <button class="btn bnt-warning">Детальнее</button>
