@@ -7,7 +7,7 @@ from datetime import datetime
 from flask import Flask, render_template, request, redirect, flash, url_for, session
 from flask_sqlalchemy import SQLAlchemy
 from flask_mail import Mail, Message
-from flask_login import LoginManager, login_user, login_required, logout_user
+from flask_login import LoginManager, login_user, login_required, logout_user, current_user
 
 from itsdangerous import URLSafeTimedSerializer, SignatureExpired
 
@@ -89,23 +89,26 @@ def login():
         return session_start(username=username, password=password, grant_type='password')
 
     else:
-        return render_template("login.html")
+        if current_user.is_authenticated:
+            return redirect(f'/day/{str(datetime.now().date())}')
+        else:
+            return render_template("login.html")
 
 
 @app.route('/', methods=['GET'])
 def session_start(username, password, grant_type):
-    current_user = UserLogin.query.filter_by(username=username).first()
+    user = UserLogin.query.filter_by(username=username).first()
 
-    if current_user:
-        if current_user.password == password:
-            login_user(current_user)
+    if user:
+        if user.password == password:
+            login_user(user, remember=True)
 
             access_token = urlserializer.dumps(os.urandom(8).hex())
             refresh_token = urlserializer.dumps(os.urandom(8).hex())
             sessionDb = SessionDb(access_token=access_token,
                                   refresh_token=refresh_token,
                                   type=grant_type,
-                                  user_id=current_user.id)
+                                  user_id=user.id)
 
             session.permanent = True
             session['access_token'] = access_token
@@ -119,7 +122,7 @@ def session_start(username, password, grant_type):
                 print(ex)
                 return "DB ERROR"
 
-            return redirect(f'/user/{username}')
+            return redirect(f'/day/{str(datetime.now().date())}')
 
         else:
             flash('Неправильный пароль')
@@ -164,6 +167,7 @@ def registration():
 
         elif UserLogin.query.filter(UserLogin.email == email).all():
             flash('Эта почта недоступна')
+            return render_template("registration.html")
 
         elif re.match(pattern, password) is None:
             flash(
@@ -195,13 +199,19 @@ def registration():
         return render_template("registration.html")
 
 
+@app.route('/logout', methods=['POST', 'GET'])
+def logout():
+    logout_user()
+    return redirect('/')
+
+
 @app.route('/reset_password', methods=['POST', 'GET'])
 def reset_password():
     if request.method == 'POST':
         email = request.form['email']
-        current_user = UserLogin.query.filter(UserLogin.email == email).first()
-        if current_user:
-            if current_user.email_confirm == 'True':
+        user = UserLogin.query.filter(UserLogin.email == email).first()
+        if user:
+            if user.email_confirm == 'True':
                 token = urlserializer.dumps(email, salt='email-confirm')
                 msg = Message('Reset password', recipients=[email])
                 link = url_for('reset_password_success', token=token, _external=True)
@@ -225,7 +235,7 @@ def reset_password():
 def reset_password_success(token):
     try:
         email = urlserializer.loads(token, salt='email-confirm', max_age=3600)
-        current_user = UserLogin.query.filter(UserLogin.email == email).first()
+        user = UserLogin.query.filter(UserLogin.email == email).first()
 
         new_password = ''
 
@@ -235,14 +245,14 @@ def reset_password_success(token):
 
         new_password_hash = hashlib.sha256(new_password.encode('utf-8')).hexdigest()
 
-        current_user.password = new_password_hash
+        user.password = new_password_hash
         try:
             db.session.commit()
         except Exception:
             return 'DB_ERROR'
 
         return render_template("info.html",
-                               info=f'Пароль для аккаунта {current_user.username} изменен\nВаш новый пароль: {new_password} ')
+                               info=f'Пароль для аккаунта {user.username} изменен\nВаш новый пароль: {new_password} ')
     except SignatureExpired:
         return render_template("info.html", info='Время действия токена превышено')
 
@@ -251,13 +261,14 @@ def reset_password_success(token):
 def confirm_email(token):
     try:
         email = urlserializer.loads(token, salt='email-confirm', max_age=60)
-        current_user = UserLogin.query.filter(UserLogin.email == email).first()
-        current_user.email_confirm = 'True'
+        user = UserLogin.query.filter(UserLogin.email == email).first()
+        user.email_confirm = 'True'
+
         try:
             db.session.commit()
         except Exception:
             return 'DB_ERROR'
-        return render_template("info.html", info=f'Вы успешно зарегистрировались\nВаш никнейм {current_user.username} ')
+        return render_template("info.html", info=f'Вы успешно зарегистрировались\nВаш никнейм {user.username} ')
     except SignatureExpired:
         return render_template("info.html", info='Время действия токена превышено')
 
@@ -285,48 +296,12 @@ class Lecture(db.Model):
         return '<Lecture %r>' % self.id
 
 
-@app.route('/homepage')
-def homepage():
-    return render_template("homepage.html")
-
-
-@app.route('/homepage/new_course', methods=['POST', 'GET'])
-def new_course():
-    title = request.form['title']
-    description = request.form['description']
-    course = Course(title=title, description=description)
-    try:
-        db.session.add(course)
-        db.session.commit()
-    except Exception:
-        return 'DB_ERROR'
-
-    return render_template("new_course.html")
-
-
-@app.route('/homepage/new_lecture', methods=['POST', 'GET'])
-def new_lecture():
-    title = request.form['title']
-    description = request.form['description']
-    date = request.form['date']
-    course_id = request.form['course_id']
-
-    lecture = Lecture(title=title, description=description, date=date, course_id=course_id)
-    try:
-        db.session.add(lecture)
-        db.session.commit()
-    except Exception:
-        return 'DB_ERROR'
-
-    return render_template("new_lecture.html")
-
-
-@app.route('/user/<string:email>')
-# @login_required
-def user(email):
+@app.route('/day/<string:day>')
+@login_required
+def dashboard(day):
     # return f"page {email} {session.get('access_token')} {session.get('refresh_token')}"
     # app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///dashboard.db'
-    lectures = Lecture.query.filter(Lecture.date == str(datetime.now().date())).all()
+    lectures = Lecture.query.filter(Lecture.date == str(day)).all()
     courses = Course.query.order_by(Course.id).all()
     courses_dict = {}
     for course in courses:

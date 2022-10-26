@@ -5,22 +5,21 @@
 </head>
 <body>
 
-<nav>
+<nav >
+
     <p class="dashboard-name">CyberHAckers</p>
     <a class="nav-item">Dashboard</a>
     <a class="nav-item">Курсы</a>
     <a class="nav-item">Форум</a>
-    <a class="nav-item">Расписание</a>
-    <button class="nav-item" id="exit-button">Выход</button>
+    <a class="nav-item" >Расписание</a>
+    <a class="nav-item" href="/logout">Выход</a>
+
 </nav>
 <div class="today-container" style="overflow-y:scroll;">
     <p class="today-is-heading">Сегодня,       </p>
 
     {% for lecture in lectures %}
     <h2 >{{ lecture.title }}</h2>
-<!--    {% if lecture.title == 'первая' %}-->
-<!--    <h2 >Ок</h2>-->
-<!--    {% endif %}-->
     <p>{{ lecture.description }}</p>
     <p>Курс - {{ courses_dict[lecture.course_id]}}</p>
     <button class="btn bnt-warning">Детальнее</button>
