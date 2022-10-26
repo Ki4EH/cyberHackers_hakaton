@@ -58,6 +58,9 @@ nav {
     top: 10%;
     border-radius: 2px;
 }
+#exit-button {
+    border: 0;
+}
 
 .today-container {
     background-color: rgb(60, 60, 60);
