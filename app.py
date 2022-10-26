@@ -1,6 +1,7 @@
 import hashlib
 import random
 import os
+import re
 from datetime import datetime
 
 from flask import Flask, render_template, request, redirect, flash, url_for, session
@@ -10,7 +11,7 @@ from flask_login import LoginManager, login_user, login_required, logout_user
 
 from itsdangerous import URLSafeTimedSerializer, SignatureExpired
 
-
+pattern = r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[A-Za-z\d]{8,}$'
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///users.db'
@@ -33,13 +34,12 @@ urlserializer = URLSafeTimedSerializer(app.config['SECRET_KEY'])
 login_manager = LoginManager(app)
 
 
-
 class UserLogin(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(30), nullable=False)
     password = db.Column(db.String(30), nullable=False)
     email = db.Column(db.String(30), nullable=False)
-    email_confirm = db.Column(db.String(30), default='False', nullable=False) # переделать стринг в бул или инт
+    email_confirm = db.Column(db.String(30), default='False', nullable=False)  # переделать стринг в бул или инт
     phone = db.Column(db.String(30), nullable=False)
 
     def is_active(self):
@@ -54,9 +54,11 @@ class UserLogin(db.Model):
     def __repr__(self):
         return '<UserLogin %r>' % self.id
 
+
 @login_manager.user_loader
 def load_user(user_id):
     return UserLogin.query.get(user_id)
+
 
 class UserData(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -98,8 +100,8 @@ def session_start(username, password, grant_type):
         if current_user.password == password:
             login_user(current_user)
 
-            access_token = urlserializer.dumps(current_user.username, salt=os.urandom(8).hex())
-            refresh_token = urlserializer.dumps(current_user.username, salt=os.urandom(8).hex())
+            access_token = urlserializer.dumps(os.urandom(8).hex())
+            refresh_token = urlserializer.dumps(os.urandom(8).hex())
             sessionDb = SessionDb(access_token=access_token,
                                   refresh_token=refresh_token,
                                   type=grant_type,
@@ -148,7 +150,8 @@ def session_refresh(grant_type, refresh_token):
 def registration():
     if request.method == 'POST':
         username = request.form['username']
-        password = hashlib.sha256(request.form['password'].encode('utf-8')).hexdigest()
+        password = request.form['password']
+        password_hash = hashlib.sha256(request.form['password'].encode('utf-8')).hexdigest()
         email = request.form['email']
         phone = request.form['phone']
 
@@ -161,9 +164,13 @@ def registration():
 
         elif UserLogin.query.filter(UserLogin.email == email).all():
             flash('Эта почта недоступна')
+
+        elif re.match(pattern, password) is None:
+            flash(
+                'Используйте надежный пароль.\nМинимальная длина - 8 символов.\nИспользуйте символы в обеих регистрах и цифры')
             return render_template("registration.html")
         else:
-            new_userLogin = UserLogin(username=username, password=password, email=email, phone=phone)
+            new_userLogin = UserLogin(username=username, password=password_hash, email=email, phone=phone)
             new_userData = UserData(first_name=first_name, last_name=last_name)
             try:
                 db.session.add(new_userLogin)
@@ -181,7 +188,8 @@ def registration():
             msg.body = f'Чтобы подтвердить вашу почту к аккуанту {username}' \
                        f' перейдите по ссылке:\n{link}'
             mail.send(msg)
-            return render_template("info.html", info=f'Вам отправлено письмо для подтверждения почты {email}\nСсылка действует 1 час')
+            return render_template("info.html",
+                                   info=f'Вам отправлено письмо для подтверждения почты {email}\nСсылка действует 1 час')
 
     else:
         return render_template("registration.html")
@@ -207,7 +215,8 @@ def reset_password():
             flash('Почта не существует')
             return render_template("reset_password.html")
 
-        return render_template("info.html", info='На вашу почту отправлена ссылка для смены пароля.\nСсылка действует 1 час')
+        return render_template("info.html",
+                               info='На вашу почту отправлена ссылка для смены пароля.\nСсылка действует 1 час')
     else:
         return render_template("reset_password.html")
 
@@ -221,7 +230,8 @@ def reset_password_success(token):
         new_password = ''
 
         for x in range(16):
-            new_password = new_password + random.choice(list('1234567890abcdefghigklmnopqrstuvyxwzABCDEFGHIGKLMNOPQRSTUVYXWZ'))
+            new_password = new_password + random.choice(
+                list('1234567890abcdefghigklmnopqrstuvyxwzABCDEFGHIGKLMNOPQRSTUVYXWZ'))
 
         new_password_hash = hashlib.sha256(new_password.encode('utf-8')).hexdigest()
 
@@ -231,7 +241,8 @@ def reset_password_success(token):
         except Exception:
             return 'DB_ERROR'
 
-        return render_template("info.html", info=f'Пароль для аккаунта {current_user.username} изменен\nВаш новый пароль: {new_password} ')
+        return render_template("info.html",
+                               info=f'Пароль для аккаунта {current_user.username} изменен\nВаш новый пароль: {new_password} ')
     except SignatureExpired:
         return render_template("info.html", info='Время действия токена превышено')
 
@@ -251,19 +262,7 @@ def confirm_email(token):
         return render_template("info.html", info='Время действия токена превышено')
 
 
-
-
-@app.route('/user/<string:email>')
-@login_required
-def user(email):
-    return f"page {email} {session.get('access_token')} {session.get('refresh_token')}"
-
-
-
-
 # dashboard
-
-
 
 
 class Course(db.Model):
@@ -321,6 +320,18 @@ def new_lecture():
 
     return render_template("new_lecture.html")
 
+
+@app.route('/user/<string:email>')
+# @login_required
+def user(email):
+    # return f"page {email} {session.get('access_token')} {session.get('refresh_token')}"
+    # app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///dashboard.db'
+    lectures = Lecture.query.filter(Lecture.date == str(datetime.now().date())).all()
+    courses = Course.query.order_by(Course.id).all()
+    courses_dict = {}
+    for course in courses:
+        courses_dict[course.id] = course.title
+    return render_template("homepage.html", lectures=lectures, courses_dict=courses_dict)
 
 
 if __name__ == '__main__':

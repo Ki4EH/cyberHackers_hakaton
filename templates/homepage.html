@@ -14,7 +14,18 @@
     <button class="nav-item" id="exit-button">Выход</button>
 </nav>
 <div class="today-container">
-<p class="today-is-heading">Сегодня, </p>
+    <p class="today-is-heading">Сегодня, </p>
+
+    {% for lecture in lectures %}
+    <h2 >{{ lecture.title }}</h2>
+<!--    {% if lecture.title == 'первая' %}-->
+<!--    <h2 >Ок</h2>-->
+<!--    {% endif %}-->
+    <p>{{ lecture.description }}</p>
+    <p>Курс - {{ courses_dict[lecture.course_id]}}</p>
+    <button class="btn bnt-warning">Детальнее</button>
+    {% endfor %}
+
 </div>
 
 <div class="calendar-wrapper">
