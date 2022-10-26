@@ -25,6 +25,7 @@ var Cal = function(divId) {
     this.currMonth = d.getMonth();
     window.crMonth = this.currMonth;
     this.currYear = d.getFullYear();
+    window.crYear = this.currYear;
     this.currDay = d.getDate();
   };
   Cal.prototype.nextMonth = function() {
@@ -32,6 +33,7 @@ var Cal = function(divId) {
       this.currMonth = 0;
       window.crMonth = this.currMonth;
       this.currYear = this.currYear + 1;
+      window.crYear = this.currYear;
     }
     else {
       this.currMonth = this.currMonth + 1;
@@ -44,6 +46,7 @@ var Cal = function(divId) {
       this.currMonth = 11;
       window.crMonth = this.currMonth;
       this.currYear = this.currYear - 1;
+      window.crYear = this.currYear;
     }
     else {
       this.currMonth = this.currMonth - 1;
@@ -86,9 +89,9 @@ var Cal = function(divId) {
       var chkY = chk.getFullYear();
       var chkM = chk.getMonth();
       if (chkY == this.currYear && chkM == this.currMonth && i == this.currDay) {
-        html += '<td class="today" id="cal-days' + i + '">' + i + '</td>';
+        html += '<td class="today" href="/day/' + i + '-' + (window.crMonth+1) + '-' + window.crYear + '" id="cal-days' + i + '">' + i + '</td>';
       } else {
-        html += '<td class="normal" id="cal-days' + i + '">' + i + '</td>';
+        html += '<td class="normal" href="/day/' + i + '-' + (window.crMonth+1) + '-' + window.crYear + '" id="cal-days' + i + '">' + i + '</td>';
       }
       if ( dow == 0 ) {
         html += '</tr>';
