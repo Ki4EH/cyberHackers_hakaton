@@ -13,8 +13,8 @@
     <a class="nav-item">Расписание</a>
     <button class="nav-item" id="exit-button">Выход</button>
 </nav>
-<div class="today-container">
-    <p class="today-is-heading">Сегодня, </p>
+<div class="today-container" style="overflow-y:scroll;">
+    <p class="today-is-heading">Сегодня,       </p>
 
     {% for lecture in lectures %}
     <h2 >{{ lecture.title }}</h2>

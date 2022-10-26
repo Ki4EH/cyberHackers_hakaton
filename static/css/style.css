@@ -73,13 +73,46 @@ nav {
 }
 .today-is-heading {
     color: white;
-    display: inline-block;
+    margin-top: -0.1px;
+    background-color: #3C3C3C;
     position: absolute;
     margin-left: 2%;
-    font-size: 22pt;
+    font-size: 100px;
+    height: -100px;
+    width: 45%;
     font-family: monospace;
 }
-
+.today-container button {
+    margin-left: 30;
+    border: 3px solid #4b5291;
+    background-color: #4b5291;
+    border-radius: 25px;
+    font-size: 20px;
+    padding-left: 30px;
+    padding-right: 30px;
+    color: #e9f4fb;
+    font-weight: 700;
+    cursor: pointer;
+    outline: none;
+    font-family: monospace;
+}
+.today-container button:hover {
+    border-color: #7585b9;
+    transition: .5s;
+}
+.today-container p{
+    color: white;
+    font-size: 30px;
+    font-family: monospace;
+    margin-left: 30px;
+}
+.today-container h2{
+    padding-top: 10px;
+    font-family: monospace;
+    padding-left: 30px;
+    color: white;
+    font-size: 40px;
+}
 .calendar {
     display: inline-block;
     position: relative;
